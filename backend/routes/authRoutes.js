@@ -1,28 +1,31 @@
 import express from "express";
-import User from "../models/user.js";  // Ensure correct model import
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
 import bcrypt from "bcrypt";
+import User from "./models/User.js";  // Import User model
 
-const router = express.Router();
+dotenv.config();
 
-// Signup Route
-router.post("/signup", async (req, res) => {
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+app.post("/api/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Check if user already exists
+    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // Hash the password before saving
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create new user
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, email, password: hashedPassword });
-    await newUser.save();
 
+    await newUser.save();
     res.status(201).json({ message: "User registered successfully!" });
   } catch (error) {
     console.error("Signup Error:", error);
@@ -30,4 +33,5 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-export default router;
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
